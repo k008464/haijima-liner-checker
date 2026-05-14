@@ -5,9 +5,15 @@ from notifier import send_discord
 
 LOGIN_URL = "https://www.smooz.jp/Smooz/login.xhtml?refererView=top"
 
-TARGET_TRAINS = ["拝島ライナー２号", "拝島ライナー４号"]
+TARGET_TRAINS = [
+    "拝島ライナー２号",
+    "拝島ライナー４号"
+]
 
-WEEKDAYS = ["月", "火", "水", "木", "金", "土", "日"]
+WEEKDAYS = [
+    "月", "火", "水",
+    "木", "金", "土", "日"
+]
 
 
 def jst_now():
@@ -27,40 +33,76 @@ def format_date_value(target_date):
     return target_date.replace("-", "")
 
 
-def format_message(target_date, train_name, seats):
-    dt = datetime.strptime(target_date, "%Y-%m-%d")
+def format_message(
+    target_date,
+    train_name,
+    seats
+):
+    dt = datetime.strptime(
+        target_date,
+        "%Y-%m-%d"
+    )
 
-    weekday = WEEKDAYS[dt.weekday()]
+    weekday = WEEKDAYS[
+        dt.weekday()
+    ]
 
     seat_text = ", ".join(seats)
 
     return (
-        f"{dt.strftime('%Y/%m/%d')}_{weekday}曜日 "
-        f"{train_name} 空き座席: {seat_text}"
+        f"{dt.strftime('%Y/%m/%d')}"
+        f"_{weekday}曜日 "
+        f"{train_name} "
+        f"空き座席: {seat_text}"
     )
 
 
 def login(page):
-    page.goto(LOGIN_URL, wait_until="networkidle")
+    page.goto(
+        LOGIN_URL,
+        wait_until="networkidle"
+    )
 
-    page.fill("#loginId", os.environ["SMOOZ_ID"])
-    page.fill("#password", os.environ["SMOOZ_PASSWORD"])
+    page.fill(
+        "#loginId",
+        os.environ["SMOOZ_ID"]
+    )
+
+    page.fill(
+        "#password",
+        os.environ["SMOOZ_PASSWORD"]
+    )
 
     page.click("#submit")
 
-    page.wait_for_url("**/top.xhtml", timeout=30000)
+    page.wait_for_url(
+        "**/top.xhtml",
+        timeout=30000
+    )
 
 
-def search_train(page, target_date):
+def search_train(
+    page,
+    target_date
+):
     page.click("#specifyTime")
 
     page.select_option(
         "#departureDate",
-        format_date_value(target_date)
+        format_date_value(
+            target_date
+        )
     )
 
-    page.select_option("#departureHour", "04")
-    page.select_option("#departureMinute", "00")
+    page.select_option(
+        "#departureHour",
+        "04"
+    )
+
+    page.select_option(
+        "#departureMinute",
+        "00"
+    )
 
     page.click("#selectDeparture")
 
@@ -81,45 +123,78 @@ def search_train(page, target_date):
         timeout=30000
     )
 
-    page.wait_for_load_state("networkidle")
+    page.wait_for_load_state(
+        "networkidle"
+    )
 
 
-def click_purchase_for_train(page, train_name):
-    if "２号" in train_name or "2号" in train_name:
-        page.locator("#0\\:buyBtn2").click()
+def click_purchase_for_train(
+    page,
+    train_name
+):
+    if (
+        "２号" in train_name
+        or
+        "2号" in train_name
+    ):
 
-    elif "４号" in train_name or "4号" in train_name:
-        page.locator("#2\\:buyBtn2").click()
+        page.locator(
+            '[id="0:buyBtn2"]'
+        ).click()
+
+    elif (
+        "４号" in train_name
+        or
+        "4号" in train_name
+    ):
+
+        page.locator(
+            '[id="2:buyBtn2"]'
+        ).click()
 
     else:
         raise Exception(
-            f"未知の列車名です: {train_name}"
+            f"未知の列車名: "
+            f"{train_name}"
         )
 
-    page.wait_for_load_state("networkidle")
+    page.wait_for_load_state(
+        "networkidle"
+    )
 
 
 def choose_seat_map(page):
-    page.get_by_text("1名", exact=True).first.click()
+    page.get_by_text(
+        "1名",
+        exact=True
+    ).first.click()
 
     page.get_by_text(
         "シートマップ",
         exact=False
     ).click()
 
-    page.wait_for_load_state("networkidle")
+    page.wait_for_load_state(
+        "networkidle"
+    )
 
 
-def collect_available_seats(page):
+def collect_available_seats(
+    page
+):
     all_seats = []
 
     for car_no in range(1, 11):
-        car_label = f"{car_no}号車"
+
+        car_label = (
+            f"{car_no}号車"
+        )
 
         if page.get_by_text(
             car_label,
             exact=False
         ).count() == 0:
+
             continue
 
         page.get_by_text(
@@ -127,7 +202,9 @@ def collect_available_seats(page):
             exact=False
         ).first.click()
 
-        page.wait_for_timeout(1000)
+        page.wait_for_timeout(
+            1000
+        )
 
         seats = page.locator(
             "td.crossSeat:not(.notsale)"
@@ -136,9 +213,12 @@ def collect_available_seats(page):
         count = seats.count()
 
         for i in range(count):
+
             seat = seats.nth(i)
 
-            seat_id = seat.get_attribute("id")
+            seat_id = (
+                seat.get_attribute("id")
+            )
 
             text = (
                 seat.inner_text()
@@ -146,7 +226,11 @@ def collect_available_seats(page):
                 .strip()
             )
 
-            if not seat_id or not text:
+            if (
+                not seat_id
+                or
+                not text
+            ):
                 continue
 
             car = int(
@@ -157,24 +241,37 @@ def collect_available_seats(page):
                 f"{car}号車{text}"
             )
 
-    return sorted(set(all_seats))
+    return sorted(
+        set(all_seats)
+    )
 
 
 def main():
-    target_date = os.environ["TARGET_DATE"]
+    target_date = os.environ[
+        "TARGET_DATE"
+    ]
 
     if not target_date:
         raise Exception(
-            "TARGET_DATE が未設定"
+            "TARGET_DATE 未設定"
         )
 
-    if is_after_stop_time(target_date):
-        print("8:00を過ぎたため終了")
+    if is_after_stop_time(
+        target_date
+    ):
+
+        print(
+            "8:00を過ぎたため終了"
+        )
+
         return
 
     with sync_playwright() as p:
-        browser = p.chromium.launch(
-            headless=True
+
+        browser = (
+            p.chromium.launch(
+                headless=True
+            )
         )
 
         page = browser.new_page(
@@ -184,15 +281,22 @@ def main():
 
         login(page)
 
-        search_train(page, target_date)
+        search_train(
+            page,
+            target_date
+        )
 
-        for train_name in TARGET_TRAINS:
+        for train_name in (
+            TARGET_TRAINS
+        ):
+
             if page.get_by_text(
                 train_name
             ).count() == 0:
 
                 print(
-                    f"{train_name}: 表示なし"
+                    f"{train_name}: "
+                    f"表示なし"
                 )
 
                 continue
@@ -204,22 +308,30 @@ def main():
 
             choose_seat_map(page)
 
-            seats = collect_available_seats(
-                page
+            seats = (
+                collect_available_seats(
+                    page
+                )
             )
 
             if seats:
-                message = format_message(
-                    target_date,
-                    train_name,
-                    seats
+
+                message = (
+                    format_message(
+                        target_date,
+                        train_name,
+                        seats
+                    )
                 )
 
-                send_discord(message)
+                send_discord(
+                    message
+                )
 
                 print(message)
 
             else:
+
                 print(
                     f"{train_name}: "
                     f"座席取得なし"
