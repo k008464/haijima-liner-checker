@@ -163,55 +163,24 @@ def click_purchase_for_train(
 
 def choose_seat_map(page):
 
-    print(
-        "===== 購入後画面 ====="
-    )
+    page.locator(
+        "#seatSpecify"
+    ).click(force=True)
 
-    print(
-        page.locator("body")
-        .inner_text()
-    )
+    page.wait_for_timeout(1000)
 
-    page.wait_for_timeout(3000)
-
-    # シートマップ指定を選択
-    seat_map = page.get_by_text(
-        "シートマップ",
-        exact=False
-    )
-
-    if seat_map.count() == 0:
-        raise Exception(
-            "シートマップが見つからない"
-        )
-
-    seat_map.first.click(
-        force=True
-    )
-
-    page.wait_for_timeout(3000)
-
-    # 次へ
-    next_button = page.get_by_text(
+    page.get_by_text(
         "次へ",
-        exact=False
-    )
-
-    if next_button.count() == 0:
-        raise Exception(
-            "次へボタンが見つからない"
-        )
-
-    next_button.first.click(
-        force=True
-    )
+        exact=True
+    ).click(force=True)
 
     page.wait_for_timeout(5000)
 
     page.wait_for_load_state(
         "networkidle"
     )
-    
+
+
 def collect_available_seats(
     page
 ):
@@ -280,6 +249,7 @@ def collect_available_seats(
 
 
 def main():
+
     target_date = os.environ[
         "TARGET_DATE"
     ]
