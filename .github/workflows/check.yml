@@ -14,15 +14,25 @@ jobs:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
+      - name: Setup Python
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
-      - run: pip install -r requirements.txt
+      - name: Install Python packages
+        run: pip install -r requirements.txt
 
-      - name: Run
+      - name: Install Playwright
+        run: |
+          playwright install chromium
+
+      - name: Run Seat Checker
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          SMOOZ_ID: ${{ secrets.SMOOZ_ID }}
+          SMOOZ_PASSWORD: ${{ secrets.SMOOZ_PASSWORD }}
+          TARGET_DATE: ${{ vars.TARGET_DATE }}
         run: python app/main.py
