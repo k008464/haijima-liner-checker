@@ -172,32 +172,19 @@ def choose_seat_map(page):
         .inner_text()
     )
 
-    page.wait_for_timeout(5000)
+    page.wait_for_timeout(3000)
 
-    # 「大人1名」を選択
-    if page.get_by_text(
-        "大人1名",
-        exact=False
-    ).count() > 0:
+    # 1名選択
+    one_person = page.locator(
+        'input[value="1"]'
+    )
 
-        page.get_by_text(
-            "大人1名",
-            exact=False
-        ).first.click()
-
-    elif page.get_by_text(
-        "1名",
-        exact=False
-    ).count() > 0:
-
-        page.get_by_text(
-            "1名",
-            exact=False
-        ).first.click()
+    if one_person.count() > 0:
+        one_person.first.check(force=True)
 
     else:
         raise Exception(
-            "人数選択が見つからない"
+            "1名選択inputが見つからない"
         )
 
     page.wait_for_timeout(2000)
@@ -211,7 +198,7 @@ def choose_seat_map(page):
         page.get_by_text(
             "シートマップ",
             exact=False
-        ).click()
+        ).click(force=True)
 
     else:
         raise Exception(
@@ -223,7 +210,6 @@ def choose_seat_map(page):
     page.wait_for_load_state(
         "networkidle"
     )
-
 
 def collect_available_seats(
     page
