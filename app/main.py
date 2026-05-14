@@ -181,9 +181,12 @@ def choose_seat_map(page):
     )
 
 
-def collect_available_seats(
-    page
-):
+def collect_available_seats(page):
+    print("===== 座席マップ画面 =====")
+    print(page.locator("body").inner_text())
+    print("crossSeat count:", page.locator("td.crossSeat").count())
+    print("available count:", page.locator("td.crossSeat:not(.notsale)").count())
+
     all_seats = []
 
     for car_no in range(1, 11):
