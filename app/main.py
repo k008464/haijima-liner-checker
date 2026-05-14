@@ -182,69 +182,43 @@ def choose_seat_map(page):
 
 
 def collect_available_seats(page):
-    print("===== 座席マップ画面 =====")
-    print(page.locator("body").inner_text())
-    print("crossSeat count:", page.locator("td.crossSeat").count())
-    print("available count:", page.locator("td.crossSeat:not(.notsale)").count())
-
     all_seats = []
 
-    for car_no in range(1, 11):
+    seats = page.locator(
+        "td.crossSeat:not(.notsale)"
+    )
 
-        car_label = (
-            f"{car_no}号車"
+    count = seats.count()
+
+    print(
+        "available count:",
+        count
+    )
+
+    for i in range(count):
+        seat = seats.nth(i)
+
+        seat_id = seat.get_attribute("id")
+
+        text = (
+            seat.inner_text()
+            .replace("*", "")
+            .strip()
         )
 
-        if page.get_by_text(
-            car_label,
-            exact=False
-        ).count() == 0:
-
+        if not seat_id or not text:
             continue
 
-        page.get_by_text(
-            car_label,
-            exact=False
-        ).first.click()
+        if "-" not in seat_id:
+            continue
 
-        page.wait_for_timeout(
-            1000
+        car_no = int(
+            seat_id.split("-")[0]
         )
 
-        seats = page.locator(
-            "td.crossSeat:not(.notsale)"
+        all_seats.append(
+            f"{car_no}号車{text}"
         )
-
-        count = seats.count()
-
-        for i in range(count):
-
-            seat = seats.nth(i)
-
-            seat_id = (
-                seat.get_attribute("id")
-            )
-
-            text = (
-                seat.inner_text()
-                .replace("*", "")
-                .strip()
-            )
-
-            if (
-                not seat_id
-                or
-                not text
-            ):
-                continue
-
-            car = int(
-                seat_id.split("-")[0]
-            )
-
-            all_seats.append(
-                f"{car}号車{text}"
-            )
 
     return sorted(
         set(all_seats)
