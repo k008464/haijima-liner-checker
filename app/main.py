@@ -182,6 +182,7 @@ def choose_seat_map(page):
 
 
 def collect_available_seats(page):
+
     all_seats = []
 
     seats = page.locator(
@@ -196,9 +197,12 @@ def collect_available_seats(page):
     )
 
     for i in range(count):
+
         seat = seats.nth(i)
 
-        seat_id = seat.get_attribute("id")
+        seat_id = (
+            seat.get_attribute("id")
+        )
 
         text = (
             seat.inner_text()
@@ -206,7 +210,11 @@ def collect_available_seats(page):
             .strip()
         )
 
-        if not seat_id or not text:
+        if (
+            not seat_id
+            or
+            not text
+        ):
             continue
 
         if "-" not in seat_id:
@@ -230,6 +238,11 @@ def main():
     target_date = os.environ[
         "TARGET_DATE"
     ]
+
+    run_mode = os.environ.get(
+        "RUN_MODE",
+        "once"
+    )
 
     if not target_date:
         raise Exception(
@@ -266,6 +279,8 @@ def main():
             target_date
         )
 
+        found = False
+
         for train_name in (
             TARGET_TRAINS
         ):
@@ -296,6 +311,8 @@ def main():
 
             if seats:
 
+                found = True
+
                 message = (
                     format_message(
                         target_date,
@@ -322,6 +339,9 @@ def main():
             page.wait_for_load_state(
                 "networkidle"
             )
+
+        if not found:
+            print("空席なし")
 
         browser.close()
 
