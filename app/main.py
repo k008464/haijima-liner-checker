@@ -158,21 +158,67 @@ def click_purchase_for_train(
             f"{train_name}"
         )
 
-    page.wait_for_load_state(
-        "networkidle"
-    )
+    page.wait_for_timeout(3000)
 
 
 def choose_seat_map(page):
-    page.get_by_text(
-        "1名",
-        exact=True
-    ).first.click()
 
-    page.get_by_text(
+    print(
+        "===== 購入後画面 ====="
+    )
+
+    print(
+        page.locator("body")
+        .inner_text()
+    )
+
+    page.wait_for_timeout(5000)
+
+    # 「大人1名」を選択
+    if page.get_by_text(
+        "大人1名",
+        exact=False
+    ).count() > 0:
+
+        page.get_by_text(
+            "大人1名",
+            exact=False
+        ).first.click()
+
+    elif page.get_by_text(
+        "1名",
+        exact=False
+    ).count() > 0:
+
+        page.get_by_text(
+            "1名",
+            exact=False
+        ).first.click()
+
+    else:
+        raise Exception(
+            "人数選択が見つからない"
+        )
+
+    page.wait_for_timeout(2000)
+
+    # シートマップ選択
+    if page.get_by_text(
         "シートマップ",
         exact=False
-    ).click()
+    ).count() > 0:
+
+        page.get_by_text(
+            "シートマップ",
+            exact=False
+        ).click()
+
+    else:
+        raise Exception(
+            "シートマップが見つからない"
+        )
+
+    page.wait_for_timeout(5000)
 
     page.wait_for_load_state(
         "networkidle"
