@@ -42,22 +42,20 @@ jobs:
       - name: Install Playwright
         run: playwright install chromium
 
-      # 手動実行時
       - name: Set env from workflow_dispatch
         if: github.event_name == 'workflow_dispatch'
         run: |
           echo "TARGET_DATE=${{ github.event.inputs.target_date }}" >> $GITHUB_ENV
           echo "RUN_MODE=${{ github.event.inputs.mode }}" >> $GITHUB_ENV
+          echo "FIRST_RUN=true" >> $GITHUB_ENV
 
-      # schedule実行時
       - name: Set env from repository variables
         if: github.event_name == 'schedule'
         run: |
           echo "TARGET_DATE=${{ vars.TARGET_DATE }}" >> $GITHUB_ENV
           echo "RUN_MODE=interval" >> $GITHUB_ENV
-          echo "RUNNING=${{ vars.RUNNING }}" >> $GITHUB_ENV
+          echo "FIRST_RUN=false" >> $GITHUB_ENV
 
-      # interval監視OFFなら終了
       - name: Skip when not running
         if: github.event_name == 'schedule' && vars.RUNNING != 'true'
         run: |
@@ -71,4 +69,5 @@ jobs:
           SMOOZ_PASSWORD: ${{ secrets.SMOOZ_PASSWORD }}
           TARGET_DATE: ${{ env.TARGET_DATE }}
           RUN_MODE: ${{ env.RUN_MODE }}
+          FIRST_RUN: ${{ env.FIRST_RUN }}
         run: python app/main.py

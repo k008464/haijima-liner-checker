@@ -33,11 +33,7 @@ def format_date_value(target_date):
     return target_date.replace("-", "")
 
 
-def format_message(
-    target_date,
-    train_name,
-    seats
-):
+def format_base_date(target_date):
     dt = datetime.strptime(
         target_date,
         "%Y-%m-%d"
@@ -47,17 +43,38 @@ def format_message(
         dt.weekday()
     ]
 
+    return (
+        f"{dt.strftime('%Y/%m/%d')}"
+        f"_{weekday}曜日"
+    )
+
+
+def format_message(
+    target_date,
+    train_name,
+    seats
+):
     seat_text = ", ".join(seats)
 
     return (
-        f"{dt.strftime('%Y/%m/%d')}"
-        f"_{weekday}曜日 "
+        f"{format_base_date(target_date)} "
         f"{train_name} "
         f"空き座席: {seat_text}"
     )
 
 
+def format_no_seat_message(
+    target_date
+):
+    return (
+        f"{format_base_date(target_date)} "
+        f"拝島ライナー２号・４号 "
+        f"空き座席なし"
+    )
+
+
 def login(page):
+
     page.goto(
         LOGIN_URL,
         wait_until="networkidle"
@@ -85,6 +102,7 @@ def search_train(
     page,
     target_date
 ):
+
     page.click("#specifyTime")
 
     page.select_option(
@@ -132,15 +150,16 @@ def click_purchase_for_train(
     page,
     train_name
 ):
+
     if (
         "２号" in train_name
         or
         "2号" in train_name
     ):
 
-        page.locator(
+        selector = (
             '[id="0:buyBtn2"]'
-        ).click()
+        )
 
     elif (
         "４号" in train_name
@@ -148,17 +167,37 @@ def click_purchase_for_train(
         "4号" in train_name
     ):
 
-        page.locator(
-            '[id="2:buyBtn2"]'
-        ).click()
+        selector = (
+            '[id="1:buyBtn2"]'
+        )
 
     else:
+
         raise Exception(
             f"未知の列車名: "
             f"{train_name}"
         )
 
+    if (
+        page.locator(
+            selector
+        ).count() == 0
+    ):
+
+        print(
+            f"{train_name}: "
+            f"購入ボタンなし"
+        )
+
+        return False
+
+    page.locator(
+        selector
+    ).click()
+
     page.wait_for_timeout(3000)
+
+    return True
 
 
 def choose_seat_map(page):
@@ -181,7 +220,9 @@ def choose_seat_map(page):
     )
 
 
-def collect_available_seats(page):
+def collect_available_seats(
+    page
+):
 
     all_seats = []
 
@@ -239,12 +280,15 @@ def main():
         "TARGET_DATE"
     ]
 
-    run_mode = os.environ.get(
-        "RUN_MODE",
-        "once"
+    first_run = (
+        os.environ.get(
+            "FIRST_RUN",
+            "false"
+        ) == "true"
     )
 
     if not target_date:
+
         raise Exception(
             "TARGET_DATE 未設定"
         )
@@ -296,10 +340,21 @@ def main():
 
                 continue
 
-            click_purchase_for_train(
-                page,
-                train_name
+            clicked = (
+                click_purchase_for_train(
+                    page,
+                    train_name
+                )
             )
+
+            if not clicked:
+
+                print(
+                    f"{train_name}: "
+                    f"空席なし"
+                )
+
+                continue
 
             choose_seat_map(page)
 
@@ -341,7 +396,18 @@ def main():
             )
 
         if not found:
-            print("空席なし")
+
+            print(
+                "空き座席なし"
+            )
+
+            if first_run:
+
+                send_discord(
+                    format_no_seat_message(
+                        target_date
+                    )
+                )
 
         browser.close()
 
